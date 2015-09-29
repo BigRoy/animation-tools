@@ -13,6 +13,7 @@ import sys
 import json
 
 import maya.cmds as mc
+import maya.mel as mel
 from maya.OpenMaya import *
 from maya.OpenMayaMPx import *
 from maya.OpenMayaAnim import *
@@ -24,30 +25,6 @@ kDefaultOptionsString = '0'
 
 FLOAT_PRECISION = 8
 
-# This table is used to convert a Maya enumeration into integer framerate.
-kFrameRateLookup = {
-    MTime.kSeconds: 1,
-    MTime.kMilliseconds: 1000,
-    MTime.kGames: 15,
-    MTime.kFilm: 24,
-    MTime.kPALFrame: 25,
-    MTime.kNTSCFrame: 30,
-    MTime.kShowScan: 48,
-    MTime.kPALField: 50,
-    MTime.kNTSCField: 60,
-    MTime.k2FPS: 2,
-    MTime.k3FPS: 3,
-    MTime.k4FPS: 4,
-    MTime.k5FPS: 5,
-    MTime.k6FPS: 6,
-    MTime.k8FPS: 8,
-    MTime.k10FPS: 10,
-    MTime.k12FPS: 12,
-    MTime.k16FPS: 16,
-    MTime.k20FPS: 20,
-    MTime.k40FPS: 40,
-    MTime.k75FPS: 75
-};
 
 # adds decimal precision to JSON encoding
 class DecimalEncoder(json.JSONEncoder):
@@ -526,7 +503,7 @@ class ThreeJsWriter(object):
         
         print ""
         print "--- Exporting Animation Data ---------"
-                
+
         # Make sure the animation is set to it's starting frame
         startTime = MAnimControl.animationStartTime()
         endTime = MAnimControl.animationEndTime()
@@ -539,14 +516,9 @@ class ThreeJsWriter(object):
         # Extract animation data
         print "Building animation set [", startTime.value(), ",", endTime.value(), "]"
         animationFrameRange = int(endTime.value() - startTime.value())
-        
+
         frameRateUnits = startTime.unit()
-        if frameRateUnits in kFrameRateLookup:
-            self.animation["fps"] = 24.0 * MAnimControl.playbackSpeed();
-        else:
-            print "***FAILED Could not find matching framerate for unit enumeration", frameRateUnits
-            return
-        
+        self.animation["fps"] = mel.eval('currentTimeUnitToFPS()')
         print "Frame Rate:", self.animation['fps']
         
         framePeriod = 1.0 / self.animation['fps']
